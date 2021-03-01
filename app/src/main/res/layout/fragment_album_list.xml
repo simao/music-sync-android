@@ -4,11 +4,11 @@
         xmlns:tools="http://schemas.android.com/tools"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        tools:context=".ui.album_list.AlbumListFragment">
+        tools:context="eu.zeroio.musicsync.ui.album_list.AlbumListFragment">
 
     <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/album_list_view"
-            android:name="eu.zio.musicsync.Something"
+            android:name="eu.zeroio.musicsync.Something"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:layout_marginLeft="16dp"
