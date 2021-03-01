@@ -2,6 +2,7 @@ package eu.zio.musicsync.ui.album_list
 
 import android.app.Application
 import android.app.DownloadManager
+import android.content.Context
 import android.net.Uri
 import androidx.documentfile.provider.DocumentFile
 import androidx.lifecycle.AndroidViewModel
@@ -66,10 +67,13 @@ class AlbumListViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    fun download(album: Album) {
+    fun download(baseDir: Uri, album: Album) {
         viewModelScope.launch {
+            val ctx: Context = getApplication()
+            val df = DocumentFile.fromTreeUri(ctx, baseDir)!!
+
             downloader
-                .downloadAlbum(album)
+                .downloadAlbum(df, ctx.contentResolver, album)
                 .onFailure { userMessage.postValue("Could not download albums: ${it.message}") }
         }
     }

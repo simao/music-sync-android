@@ -52,7 +52,7 @@ class AlbumListFragment : Fragment() {
         }
 
         albumListViewModel.selectedAlbum.observe(this, Observer {
-            albumListViewModel.download(it)
+            albumListViewModel.download(getMusicDir()!!, it) // TODO: !!
             Toast.makeText(context, "Queued download", Toast.LENGTH_SHORT).show()
         })
 

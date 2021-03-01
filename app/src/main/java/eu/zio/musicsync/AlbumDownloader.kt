@@ -1,6 +1,7 @@
 package eu.zio.musicsync
 
 import android.app.DownloadManager
+import android.content.ContentResolver
 import android.os.Environment
 import androidx.core.net.toUri
 import androidx.documentfile.provider.DocumentFile
@@ -9,6 +10,7 @@ import eu.zio.musicsync.model.OfflineStatus
 import eu.zio.musicsync.model.Track
 import timber.log.Timber
 import java.io.File
+import java.io.FileOutputStream
 
 class AlbumDownloader(private val client: MusicSyncHttpClient,
                       private val downloadManager: DownloadManager
@@ -19,13 +21,6 @@ class AlbumDownloader(private val client: MusicSyncHttpClient,
             return Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC)
                 .toPath()
                 .resolve("MusicSync/${album.artist.name}/${album.name}/${t.filename}")
-                .toFile()
-        }
-
-        fun albumDir(album: Album): File {
-            return artistDir(album.artist.name)
-                .toPath()
-                .resolve(album.name)
                 .toFile()
         }
 
@@ -59,7 +54,7 @@ class AlbumDownloader(private val client: MusicSyncHttpClient,
         }
     }
 
-    suspend fun downloadAlbum(album: Album): Result<Int> {
+    suspend fun downloadAlbum(baseDir: DocumentFile, contentResolver: ContentResolver, album: Album): Result<Int> {
         val tracksR = client.albumTracks(album.id)
 
         return tracksR.map { tracks ->
@@ -77,12 +72,28 @@ class AlbumDownloader(private val client: MusicSyncHttpClient,
                 }
             }
 
-            tracks.firstOrNull()?.album?.let {
-                val req = DownloadManager.Request(client.albumCoverUri(it.id))
-                req.setDestinationUri(albumDir(it).resolve("cover.jpg").toUri())
-                req.setAllowedOverMetered(false)
-                downloadManager.enqueue(req)
+            val response = client.fetchAlbumArtwork(album).getOrThrow() // TODO: Throw
+            val mimetype = response.mimetype ?: "image/jpeg"
+
+            if (baseDir.findFile(album.artist.name) == null) {
+                baseDir.createDirectory(album.artist.name)
             }
+
+            val albumDir = baseDir.findFile(album.artist.name)?.findFile(album.name)
+            if (albumDir == null) {
+                baseDir.findFile(album.artist.name)?.createDirectory(album.name)
+            }
+
+            val uri = albumDir?.createFile(mimetype, "cover")?.uri
+
+            uri?.let {
+                contentResolver.openFileDescriptor(it, "rw")?.use {
+                    FileOutputStream(it.fileDescriptor).use {
+                        it.write(response.bytes.array())
+                    }
+                }
+            }
+
 
             tracks.size
         }

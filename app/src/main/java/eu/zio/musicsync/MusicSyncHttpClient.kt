@@ -16,6 +16,7 @@ import timber.log.Timber
 import java.io.File
 import java.io.FileOutputStream
 import java.io.UnsupportedEncodingException
+import java.nio.ByteBuffer
 import java.nio.charset.Charset
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
@@ -46,7 +47,9 @@ class MoshiJsonRequest<T>(method: Int, url: Uri, private val adapter: JsonAdapte
     }
 }
 
-class ArtworkRequest(url: String, private val file: File, private val ok: Response.Listener<File>, error: Response.ErrorListener) : Request<File>(Method.GET, url, error) {
+class ArtworkResponse(val filename: String, val mimetype: String?, val bytes: ByteBuffer)
+
+class ArtworkRequest(url: String, private val ok: Response.Listener<ArtworkResponse>, error: Response.ErrorListener) : Request<ArtworkResponse>(Method.GET, url, error) {
     private fun parseFilename(headers: Map<String, String>): String? {
         val contentType = headers["content-disposition"]
         if (contentType != null) {
@@ -67,26 +70,26 @@ class ArtworkRequest(url: String, private val file: File, private val ok: Respon
         return null
     }
 
-    override fun parseNetworkResponse(response: NetworkResponse?): Response<File> {
+    override fun parseNetworkResponse(response: NetworkResponse?): Response<ArtworkResponse> {
         val n = response?.headers?.let { parseFilename(it) }
-        val p = file.resolve(n ?: "artwork.jpg") // TODO: Always jpg? Check headers?
+        val p = n ?: "artwork.jpg" // TODO: Always jpg? Check headers?
 
-        p.parentFile!!.mkdirs() // Check result
-
-        response?.data?.let {
-            val out = FileOutputStream(p)
-            out.write(it)
-            out.close()
-            // Files.write(p.toPath(), it, StandardOpenOption.CREATE)
+        val bytes = response?.data?.let {
+            ByteBuffer.wrap(it)
         }
 
-        return Response.success(p, HttpHeaderParser.parseCacheHeaders(response))
+        return if (bytes == null) {
+            Response.error(VolleyError("Empty response received"))
+        } else {
+            val contentType = response.headers["content-type"]
+            Response.success(ArtworkResponse(p, contentType, bytes), HttpHeaderParser.parseCacheHeaders(response))
+        }
     }
 
     private val mLock = Any()
 
-    override fun deliverResponse(response: File?) {
-        var listener: Response.Listener<File>?
+    override fun deliverResponse(response: ArtworkResponse?) {
+        var listener: Response.Listener<ArtworkResponse>?
         synchronized(mLock) { listener = ok }
         listener?.onResponse(response)
     }
@@ -105,10 +108,10 @@ class MusicSyncHttpClient(private val queue: RequestQueue) {
         return url.buildUpon().appendEncodedPath("albums/${albumId}/artwork").build()
     }
 
-    suspend fun fetchAlbumArtwork(album: Album, destDir: File) = suspendCoroutine<Result<File>> { cont ->
-        val req = ArtworkRequest(albumCoverUri(album.id).toString(), destDir,
-            Response.Listener { response: File ->
-                cont.resume(Result.success(response))
+    suspend fun fetchAlbumArtwork(album: Album) = suspendCoroutine<Result<ArtworkResponse>> { cont ->
+        val req = ArtworkRequest(albumCoverUri(album.id).toString(),
+            Response.Listener {
+                cont.resume(Result.success(it))
             },
             Response.ErrorListener { error: VolleyError ->
                 Timber.e(error)
