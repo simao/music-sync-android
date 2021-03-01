@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        xmlns:tools="http://schemas.android.com/tools"
+        android:id="@+id/mobile_navigation"
+        app:startDestination="@+id/navigation_artist_list">
+
+    <fragment
+            android:id="@+id/navigation_artist_list"
+            android:name="eu.zio.musicsync.ui.artist_list.ArtistListFragment"
+            android:label="@string/title_artists"
+            tools:layout="@layout/fragment_artist_list" >
+        <action
+            android:id="@+id/action_navigation_artist_list_to_album_list"
+            app:destination="@id/album_list" />
+    </fragment>
+
+    <fragment
+            android:id="@+id/navigation_dashboard"
+            android:name="eu.zio.musicsync.ui.dashboard.DashboardFragment"
+            android:label="@string/title_dashboard"
+            tools:layout="@layout/fragment_dashboard" />
+
+    <fragment
+            android:id="@+id/navigation_notifications"
+            android:name="eu.zio.musicsync.ui.notifications.NotificationsFragment"
+            android:label="@string/title_notifications"
+            tools:layout="@layout/fragment_notifications" />
+
+    <fragment
+        android:id="@+id/album_list"
+        android:name="eu.zio.musicsync.ui.album_list.AlbumListFragment"
+        android:label="@string/artist_albums"
+        tools:layout="@layout/fragment_album_list" >
+        <argument
+            android:name="artist"
+            app:argType="string" />
+    </fragment>
+</navigation>

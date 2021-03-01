@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">MusicSync</string>
+    <string name="title_artists">Artists</string>
+    <string name="title_dashboard">Dashboard</string>
+    <string name="title_notifications">Notifications</string>
+    <string name="artist_albums">Artist Albums</string>
+</resources>
