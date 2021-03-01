@@ -17,14 +17,15 @@
         android:text="test test test"
         android:textAppearance="?attr/textAppearanceListItem" />
 
-    <ImageView
-        android:id="@+id/status_icon"
+    <ImageButton
+        android:id="@+id/album_status_icon"
         android:layout_width="50dp"
         android:layout_height="50dp"
         android:scaleType="fitXY"
         android:layout_alignParentEnd="true"
         android:layout_centerVertical="true"
         android:layout_gravity="end|center_vertical"
+            android:background="@null"
         app:srcCompat="@drawable/ic_outline_keyboard_arrow_down_24"
          />
 </RelativeLayout>

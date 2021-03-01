@@ -7,15 +7,15 @@
         tools:context=".ui.artist_list.ArtistListFragment">
 
     <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/artist_list"
-        android:name="eu.zio.musicsync.ItemFragment"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_marginLeft="16dp"
-        android:layout_marginRight="16dp"
-        android:scrollbars="vertical"
-        app:layoutManager="LinearLayoutManager"
-        tools:context=".ItemFragment"
-        tools:listitem="@layout/fragment_artist_list_item" />
+            android:id="@+id/artist_list"
+            android:name="eu.zio.musicsync.ItemFragment"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_marginLeft="16dp"
+            android:layout_marginRight="16dp"
+            android:scrollbars="vertical"
+            app:layoutManager="LinearLayoutManager"
+            tools:context=".ItemFragment"
+            tools:listitem="@layout/fragment_artist_list_item" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

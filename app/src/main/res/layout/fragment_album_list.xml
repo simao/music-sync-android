@@ -4,19 +4,18 @@
         xmlns:tools="http://schemas.android.com/tools"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        tools:context="ui.album_list.AlbumListFragment">
+        tools:context=".ui.album_list.AlbumListFragment">
 
     <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/album_list_view"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_marginLeft="16dp"
-        android:layout_marginRight="16dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        tools:listitem="@layout/fragment_album_list_item" />
+            android:id="@+id/album_list_view"
+            android:name="eu.zio.musicsync.Something"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_marginLeft="16dp"
+            android:layout_marginRight="16dp"
+            android:scrollbars="vertical"
+            app:layoutManager="LinearLayoutManager"
+            tools:listitem="@layout/fragment_album_list_item" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
 

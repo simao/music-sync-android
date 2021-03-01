@@ -6,13 +6,15 @@ import com.squareup.moshi.JsonClass
 class Artist(val name: String)
 
 
-enum class AlbumStatus {
+enum class OfflineStatus {
     Downloaded,
     PartialDownload,
     Offline
 }
 
-class RichAlbum(val album: Album, val status: AlbumStatus)
+class RichArtist(val artist: Artist, val status: OfflineStatus)
+
+class RichAlbum(val album: Album, val status: OfflineStatus)
 
 @JsonClass(generateAdapter = true)
 class Album(val id: Int, val name: String, val artist: Artist, val year: Int)

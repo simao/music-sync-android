@@ -1,7 +1,6 @@
 package eu.zio.musicsync
 
 import android.net.Uri
-import androidx.lifecycle.MutableLiveData
 import com.android.volley.*
 import com.android.volley.toolbox.HttpHeaderParser
 import com.android.volley.toolbox.JsonRequest
@@ -26,9 +25,9 @@ import kotlin.coroutines.suspendCoroutine
 @JsonClass(generateAdapter = true)
 class JsonResponse<T>(val values: List<T>)
 
-class MoshiJsonRequest<T>(method: Int, url: String, private val adapter: JsonAdapter<T>,
+class MoshiJsonRequest<T>(method: Int, url: Uri, private val adapter: JsonAdapter<T>,
                           ok: Response.Listener<T>,
-                          error: Response.ErrorListener) : JsonRequest<T>(method, url, null, ok, error) {
+                          error: Response.ErrorListener) : JsonRequest<T>(method, url.toString(), null, ok, error) {
 
     override fun parseNetworkResponse(response: NetworkResponse?): Response<T> {
         return try {
@@ -94,44 +93,44 @@ class ArtworkRequest(url: String, private val file: File, private val ok: Respon
 }
 
 class MusicSyncHttpClient(private val queue: RequestQueue) {
-    private val url = "http://192.168.1.109:3030/"
+    private val url = Uri.parse("http://192.168.1.109:3030/")!!
 
     private val moshi = Moshi.Builder().build()
 
     fun trackAudioUri(albumId: Int, trackId: String): Uri {
-        return Uri.parse(url + "albums/${albumId}/tracks/${trackId}/audio")
+        return url.buildUpon().appendEncodedPath("albums/${albumId}/tracks/${trackId}/audio").build()
     }
 
     fun albumCoverUri(albumId: Int): Uri {
-        return Uri.parse(url + "albums/${albumId}/artwork")
+        return url.buildUpon().appendEncodedPath("albums/${albumId}/artwork").build()
     }
 
-    suspend fun fetchAlbumArtwork(album: Album, destDir: File) = suspendCoroutine<Result<File>> { cont ->
-        val req = ArtworkRequest(albumCoverUri(album.id).toString(), destDir,
-            Response.Listener { response: File ->
-                cont.resume(Result.success(response))
-            },
-            Response.ErrorListener { error: VolleyError ->
-                Timber.e(error)
-                cont.resumeWithException(error)
-            }
-        )
-
-        queue.add(req)
-    }
+//    suspend fun fetchAlbumArtwork(album: Album, destDir: File) = suspendCoroutine<Result<File>> { cont ->
+//        val req = ArtworkRequest(albumCoverUri(album.id).toString(), destDir,
+//            Response.Listener { response: File ->
+//                cont.resume(Result.success(response))
+//            },
+//            Response.ErrorListener { error: VolleyError ->
+//                Timber.e(error)
+//                cont.resumeWithException(error)
+//            }
+//        )
+//
+//        queue.add(req)
+//    }
 
     suspend fun albumTracks(albumId: Int) = suspendCoroutine<Result<List<Track>>> { cont ->
         val type = Types.newParameterizedType(JsonResponse::class.java, Track::class.java)
         val adp = moshi.adapter<JsonResponse<Track>>(type)
 
         val jsonObjectRequest = MoshiJsonRequest(
-            Request.Method.GET, url + "albums/${albumId}/tracks", adp,
+            Request.Method.GET, url.buildUpon().appendEncodedPath("albums/${albumId}/tracks").build(), adp,
             Response.Listener { response ->
                 cont.resume(Result.success(response!!.values)) // TODO: !!
             },
             Response.ErrorListener { error: VolleyError ->
                 Timber.e(error)
-                cont.resumeWithException(error)
+                cont.resume(Result.failure(error))
             }
         )
 
@@ -142,35 +141,35 @@ class MusicSyncHttpClient(private val queue: RequestQueue) {
         val type = Types.newParameterizedType(JsonResponse::class.java, Album::class.java)
         val adp = moshi.adapter<JsonResponse<Album>>(type)
 
-        val u = Uri.parse(url).buildUpon().appendPath("albums").appendQueryParameter("artist", artist)
+        val u = url.buildUpon().appendPath("albums").appendQueryParameter("artist", artist).build()
 
         val jsonObjectRequest = MoshiJsonRequest(
-            Request.Method.GET, u.toString(), adp,
+            Request.Method.GET, u, adp,
             Response.Listener { response ->
 
                 cont.resume(Result.success(response!!.values))
             },
             Response.ErrorListener { error ->
-                cont.resumeWithException(error)
                 Timber.e(error)
+                cont.resume(Result.failure(error))
             }
         )
 
         queue.add(jsonObjectRequest)
     }
 
-    fun fetchArtists(livedata: MutableLiveData<List<Artist>>, errorMessage: MutableLiveData<String>) {
+    suspend fun fetchArtists() = suspendCoroutine<Result<List<Artist>>> { cont ->
         val type = Types.newParameterizedType(JsonResponse::class.java, Artist::class.java)
         val adp = moshi.adapter<JsonResponse<Artist>>(type)
 
         val jsonObjectRequest = MoshiJsonRequest(
-            Request.Method.GET, url + "artists", adp,
+            Request.Method.GET, url.buildUpon().appendPath("artists").build(), adp,
             Response.Listener { response ->
-                livedata.postValue(response!!.values)
+                cont.resume(Result.success(response!!.values))
             },
             Response.ErrorListener { error ->
-                errorMessage.value = "Could not fetch artists"
                 Timber.e(error)
+                cont.resume(Result.failure(error))
             }
         )
 
