@@ -11,10 +11,9 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import eu.zio.musicsync.R
 import eu.zio.musicsync.model.OfflineStatus
-import eu.zio.musicsync.model.RichArtist
-import timber.log.Timber
+import eu.zio.musicsync.model.DisplayArtist
 
-class ArtistRecyclerViewAdapter(val viewModel: ArtistListViewModel) : ListAdapter<RichArtist, ArtistRecyclerViewAdapter.ViewHolder>(
+class ArtistRecyclerViewAdapter(val viewModel: ArtistListViewModel) : ListAdapter<DisplayArtist, ArtistRecyclerViewAdapter.ViewHolder>(
     ArtistDiffCallback()
 ) {
 
@@ -52,12 +51,12 @@ class ArtistRecyclerViewAdapter(val viewModel: ArtistListViewModel) : ListAdapte
 }
 
 
-class ArtistDiffCallback : DiffUtil.ItemCallback<RichArtist>() {
-    override fun areItemsTheSame(oldItem: RichArtist, newItem: RichArtist): Boolean {
+class ArtistDiffCallback : DiffUtil.ItemCallback<DisplayArtist>() {
+    override fun areItemsTheSame(oldItem: DisplayArtist, newItem: DisplayArtist): Boolean {
         return oldItem.artist.name == newItem.artist.name && oldItem.status == newItem.status
     }
 
-    override fun areContentsTheSame(oldItem: RichArtist, newItem: RichArtist): Boolean {
+    override fun areContentsTheSame(oldItem: DisplayArtist, newItem: DisplayArtist): Boolean {
         return oldItem.artist.name == newItem.artist.name && oldItem.status == newItem.status
     }
 }

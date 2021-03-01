@@ -8,7 +8,7 @@ import androidx.lifecycle.viewModelScope
 import com.android.volley.toolbox.Volley
 import eu.zio.musicsync.MusicSyncHttpClient
 import eu.zio.musicsync.model.Event
-import eu.zio.musicsync.model.RichArtist
+import eu.zio.musicsync.model.DisplayArtist
 import eu.zio.musicsync.AlbumDownloader
 import kotlinx.coroutines.launch
 import java.util.*
@@ -19,7 +19,7 @@ class ArtistListViewModel(app: Application) : AndroidViewModel(app) {
 
     val errorMessage = MutableLiveData<String>()
 
-    val artists = MutableLiveData<List<RichArtist>>()
+    val artists = MutableLiveData<List<DisplayArtist>>()
 
     private val _selectedArtist = MutableLiveData<Event<String>>()
 
@@ -37,7 +37,7 @@ class ArtistListViewModel(app: Application) : AndroidViewModel(app) {
             r.onSuccess {
                 val remoteArtists = it.map {
                     val status = AlbumDownloader.artistStatus(it.name)
-                    RichArtist(it, status)
+                    DisplayArtist(it, status)
                 }.sortedBy { it.artist.name.toLowerCase(Locale.ROOT) }
 
                 artists.postValue(remoteArtists)

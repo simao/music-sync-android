@@ -8,13 +8,9 @@ import com.squareup.moshi.JsonAdapter
 import com.squareup.moshi.JsonClass
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.Types
-import eu.zio.musicsync.model.Album
-import eu.zio.musicsync.model.Artist
-import eu.zio.musicsync.model.Track
+import eu.zio.musicsync.model.*
 import org.json.JSONException
 import timber.log.Timber
-import java.io.File
-import java.io.FileOutputStream
 import java.io.UnsupportedEncodingException
 import java.nio.ByteBuffer
 import java.nio.charset.Charset
@@ -33,7 +29,7 @@ class MoshiJsonRequest<T>(method: Int, url: Uri, private val adapter: JsonAdapte
     override fun parseNetworkResponse(response: NetworkResponse?): Response<T> {
         return try {
             val cs = Charset.forName(HttpHeaderParser.parseCharset(response!!.headers, PROTOCOL_CHARSET))
-            val jsonString = String(response!!.data, cs)
+            val jsonString = String(response.data, cs)
 
             val r = adapter.fromJson(jsonString)
 
@@ -47,33 +43,10 @@ class MoshiJsonRequest<T>(method: Int, url: Uri, private val adapter: JsonAdapte
     }
 }
 
-class ArtworkResponse(val filename: String, val mimetype: String?, val bytes: ByteBuffer)
+class ArtworkResponse(val mimetype: String?, val bytes: ByteBuffer)
 
 class ArtworkRequest(url: String, private val ok: Response.Listener<ArtworkResponse>, error: Response.ErrorListener) : Request<ArtworkResponse>(Method.GET, url, error) {
-    private fun parseFilename(headers: Map<String, String>): String? {
-        val contentType = headers["content-disposition"]
-        if (contentType != null) {
-            val params =
-                contentType.split(";".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
-            for (i in 1 until params.size) {
-                val pair =
-                    params[i].trim { it <= ' ' }.split("=".toRegex())
-                        .dropLastWhile { it.isEmpty() }.toTypedArray()
-                if (pair.size == 2) {
-                    if (pair[0] == "filename") {
-                        return pair[1].replace("\"", "")
-                    }
-                }
-            }
-        }
-
-        return null
-    }
-
     override fun parseNetworkResponse(response: NetworkResponse?): Response<ArtworkResponse> {
-        val n = response?.headers?.let { parseFilename(it) }
-        val p = n ?: "artwork.jpg" // TODO: Always jpg? Check headers?
-
         val bytes = response?.data?.let {
             ByteBuffer.wrap(it)
         }
@@ -82,7 +55,7 @@ class ArtworkRequest(url: String, private val ok: Response.Listener<ArtworkRespo
             Response.error(VolleyError("Empty response received"))
         } else {
             val contentType = response.headers["content-type"]
-            Response.success(ArtworkResponse(p, contentType, bytes), HttpHeaderParser.parseCacheHeaders(response))
+            Response.success(ArtworkResponse(contentType, bytes), HttpHeaderParser.parseCacheHeaders(response))
         }
     }
 
@@ -96,7 +69,7 @@ class ArtworkRequest(url: String, private val ok: Response.Listener<ArtworkRespo
 }
 
 class MusicSyncHttpClient(private val queue: RequestQueue) {
-    private val url = Uri.parse("http://192.168.1.109:3030/")!!
+    private val url = Uri.parse("http://192.168.1.101:3030/")!!
 
     private val moshi = Moshi.Builder().build()
 
@@ -104,7 +77,7 @@ class MusicSyncHttpClient(private val queue: RequestQueue) {
         return url.buildUpon().appendEncodedPath("albums/${albumId}/tracks/${trackId}/audio").build()
     }
 
-    fun albumCoverUri(albumId: Int): Uri {
+    private fun albumCoverUri(albumId: Int): Uri {
         return url.buildUpon().appendEncodedPath("albums/${albumId}/artwork").build()
     }
 
@@ -123,13 +96,17 @@ class MusicSyncHttpClient(private val queue: RequestQueue) {
     }
 
     suspend fun albumTracks(albumId: Int) = suspendCoroutine<Result<List<Track>>> { cont ->
-        val type = Types.newParameterizedType(JsonResponse::class.java, Track::class.java)
-        val adp = moshi.adapter<JsonResponse<Track>>(type)
+        val type = Types.newParameterizedType(JsonResponse::class.java, JsonTrack::class.java)
+        val adp = moshi.adapter<JsonResponse<JsonTrack>>(type)
 
         val jsonObjectRequest = MoshiJsonRequest(
             Request.Method.GET, url.buildUpon().appendEncodedPath("albums/${albumId}/tracks").build(), adp,
             Response.Listener { response ->
-                cont.resume(Result.success(response!!.values)) // TODO: !!
+                val res = response.values.map {
+                    Track(it.id, it.name, it.filename, it.album.id, it.album.name)
+                }
+
+                cont.resume(Result.success(res))
             },
             Response.ErrorListener { error: VolleyError ->
                 Timber.e(error)
@@ -141,16 +118,19 @@ class MusicSyncHttpClient(private val queue: RequestQueue) {
     }
 
     suspend fun fetchArtistAlbums(artist: String?) = suspendCoroutine<Result<List<Album>>> { cont ->
-        val type = Types.newParameterizedType(JsonResponse::class.java, Album::class.java)
-        val adp = moshi.adapter<JsonResponse<Album>>(type)
+        val type = Types.newParameterizedType(JsonResponse::class.java, JsonAlbum::class.java)
+        val adp = moshi.adapter<JsonResponse<JsonAlbum>>(type)
 
         val u = url.buildUpon().appendPath("albums").appendQueryParameter("artist", artist).build()
 
         val jsonObjectRequest = MoshiJsonRequest(
             Request.Method.GET, u, adp,
             Response.Listener { response ->
+                val res = response.values.map {
+                    Album(it.id, it.name, it.year, it.artist.name)
+                }
 
-                cont.resume(Result.success(response!!.values))
+                cont.resume(Result.success(res))
             },
             Response.ErrorListener { error ->
                 Timber.e(error)

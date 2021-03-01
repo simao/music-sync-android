@@ -3,14 +3,11 @@ package eu.zio.musicsync.ui.album_list
 import android.view.LayoutInflater
 import android.view.MenuInflater
 import android.view.View
-import android.view.View.inflate
 import android.view.ViewGroup
 import android.widget.ImageButton
-import android.widget.ImageView
 import android.widget.PopupMenu
 import android.widget.TextView
 import androidx.core.content.ContextCompat
-import androidx.core.content.res.ColorStateListInflaterCompat.inflate
 import androidx.lifecycle.MutableLiveData
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
@@ -18,10 +15,11 @@ import androidx.recyclerview.widget.RecyclerView
 import eu.zio.musicsync.R
 import eu.zio.musicsync.model.Album
 import eu.zio.musicsync.model.OfflineStatus
-import eu.zio.musicsync.model.RichAlbum
+import eu.zio.musicsync.model.DisplayAlbum
 
-class AlbumRecyclerViewAdapter(private val selectedAlbum: MutableLiveData<Album>,
-                               private val deleteAllClicked: MutableLiveData<Pair<Int, Album>>) : ListAdapter<RichAlbum, AlbumRecyclerViewAdapter.ViewHolder>(AlbumDiffCallback()) {
+class AlbumRecyclerViewAdapter(
+    private val selectedAlbum: MutableLiveData<Album>,
+    private val deleteAllClicked: MutableLiveData<Pair<Int, Album>>) : ListAdapter<DisplayAlbum, AlbumRecyclerViewAdapter.ViewHolder>(AlbumDiffCallback()) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val view = LayoutInflater.from(parent.context).inflate(R.layout.fragment_album_list_item, parent, false)
@@ -75,12 +73,12 @@ class AlbumRecyclerViewAdapter(private val selectedAlbum: MutableLiveData<Album>
     }
 }
 
-class AlbumDiffCallback : DiffUtil.ItemCallback<RichAlbum>() {
-    override fun areItemsTheSame(oldItem: RichAlbum, newItem: RichAlbum): Boolean {
+class AlbumDiffCallback : DiffUtil.ItemCallback<DisplayAlbum>() {
+    override fun areItemsTheSame(oldItem: DisplayAlbum, newItem: DisplayAlbum): Boolean {
         return oldItem.album.id == newItem.album.id && oldItem.status == newItem.status
     }
 
-    override fun areContentsTheSame(oldItem: RichAlbum, newItem: RichAlbum): Boolean {
+    override fun areContentsTheSame(oldItem: DisplayAlbum, newItem: DisplayAlbum): Boolean {
         return oldItem.album.id == newItem.album.id && oldItem.status == newItem.status
     }
 }

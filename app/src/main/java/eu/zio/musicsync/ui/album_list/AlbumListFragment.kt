@@ -1,23 +1,22 @@
 package eu.zio.musicsync.ui.album_list
 
 import android.app.Activity
-import android.content.ContentResolver
-import android.content.Context
-import android.content.Intent
-import android.content.SharedPreferences
+import android.content.*
 import android.net.Uri
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
+import androidx.documentfile.provider.DocumentFile
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Observer
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import androidx.room.Room
 import eu.zio.musicsync.R
-import eu.zio.musicsync.model.RichAlbum
+import eu.zio.musicsync.db.AppDatabase
 
 
 /**
@@ -40,9 +39,10 @@ class AlbumListFragment : Fragment() {
         val artist = arguments?.getString("artist")
         val root = inflater.inflate(R.layout.fragment_album_list, container, false)
         val view = root.findViewById<RecyclerView>(R.id.album_list_view)
+        val db = Room.databaseBuilder(context!!, AppDatabase::class.java, "database-name").build() // TODO: Use singleton pattern
         val albumListAdapter = AlbumRecyclerViewAdapter(albumListViewModel.selectedAlbum, albumListViewModel.deleteAllClicked)
 
-        if(getMusicDir() == null) {
+        if((getMusicDir() == null) || (DocumentFile.fromTreeUri(context!!, getMusicDir()!!) == null)) {
             openMusicUri()
         }
 
@@ -52,25 +52,22 @@ class AlbumListFragment : Fragment() {
         }
 
         albumListViewModel.selectedAlbum.observe(this, Observer {
-            albumListViewModel.download(getMusicDir()!!, it) // TODO: !!
+            albumListViewModel.download(db, getMusicDir()!!, it) // TODO: !!
             Toast.makeText(context, "Queued download", Toast.LENGTH_SHORT).show()
         })
 
-        albumListViewModel.albumChanged.observe(this, Observer { (pos, status) ->
-            val item = albumListAdapter.currentList[pos]
-            albumListAdapter.currentList[pos] = RichAlbum(item.album, status)
-            albumListAdapter.notifyItemChanged(pos)
-        })
-
-        albumListViewModel.deleteAllClicked.observe(this, Observer { (pos, album) ->
-            albumListViewModel.delete(getMusicDir()!!, pos, album) } // TODO: !!
+        albumListViewModel.deleteAllClicked.observe(this, Observer { (_, album) ->
+            albumListViewModel.delete(db, getMusicDir()!!, album) } // TODO: !!
         )
 
-        albumListViewModel.albums.observe(this, Observer { list -> albumListAdapter.submitList(list) })
+        albumListViewModel.albums.observe(this, Observer { list ->
+            albumListAdapter.submitList(list)
+            albumListAdapter.notifyDataSetChanged()
+        })
 
         albumListViewModel.userMessage.observe(this, Observer { msg -> Toast.makeText(this.context, msg, Toast.LENGTH_SHORT).show() })
 
-        albumListViewModel.refresh(artist)
+        albumListViewModel.refresh(db, artist)
 
         return root
     }
