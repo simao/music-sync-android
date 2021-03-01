@@ -105,19 +105,19 @@ class MusicSyncHttpClient(private val queue: RequestQueue) {
         return url.buildUpon().appendEncodedPath("albums/${albumId}/artwork").build()
     }
 
-//    suspend fun fetchAlbumArtwork(album: Album, destDir: File) = suspendCoroutine<Result<File>> { cont ->
-//        val req = ArtworkRequest(albumCoverUri(album.id).toString(), destDir,
-//            Response.Listener { response: File ->
-//                cont.resume(Result.success(response))
-//            },
-//            Response.ErrorListener { error: VolleyError ->
-//                Timber.e(error)
-//                cont.resumeWithException(error)
-//            }
-//        )
-//
-//        queue.add(req)
-//    }
+    suspend fun fetchAlbumArtwork(album: Album, destDir: File) = suspendCoroutine<Result<File>> { cont ->
+        val req = ArtworkRequest(albumCoverUri(album.id).toString(), destDir,
+            Response.Listener { response: File ->
+                cont.resume(Result.success(response))
+            },
+            Response.ErrorListener { error: VolleyError ->
+                Timber.e(error)
+                cont.resumeWithException(error)
+            }
+        )
+
+        queue.add(req)
+    }
 
     suspend fun albumTracks(albumId: Int) = suspendCoroutine<Result<List<Track>>> { cont ->
         val type = Types.newParameterizedType(JsonResponse::class.java, Track::class.java)

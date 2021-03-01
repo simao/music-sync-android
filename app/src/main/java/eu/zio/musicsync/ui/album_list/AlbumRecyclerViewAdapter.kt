@@ -21,7 +21,7 @@ import eu.zio.musicsync.model.OfflineStatus
 import eu.zio.musicsync.model.RichAlbum
 
 class AlbumRecyclerViewAdapter(private val selectedAlbum: MutableLiveData<Album>,
-                               private val deleteAllClicked: MutableLiveData<Album>) : ListAdapter<RichAlbum, AlbumRecyclerViewAdapter.ViewHolder>(AlbumDiffCallback()) {
+                               private val deleteAllClicked: MutableLiveData<Pair<Int, Album>>) : ListAdapter<RichAlbum, AlbumRecyclerViewAdapter.ViewHolder>(AlbumDiffCallback()) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val view = LayoutInflater.from(parent.context).inflate(R.layout.fragment_album_list_item, parent, false)
@@ -54,7 +54,7 @@ class AlbumRecyclerViewAdapter(private val selectedAlbum: MutableLiveData<Album>
             popup.setOnMenuItemClickListener { c ->
                 when(c.itemId) {
                     R.id.delete_all -> {
-                        deleteAllClicked.postValue(item.album)
+                        deleteAllClicked.postValue(Pair(position, item.album))
                         true
                     }
                     else -> false

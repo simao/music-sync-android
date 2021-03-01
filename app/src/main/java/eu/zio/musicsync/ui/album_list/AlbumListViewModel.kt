@@ -2,6 +2,8 @@ package eu.zio.musicsync.ui.album_list
 
 import android.app.Application
 import android.app.DownloadManager
+import android.net.Uri
+import androidx.documentfile.provider.DocumentFile
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
@@ -9,6 +11,7 @@ import com.android.volley.toolbox.Volley
 import eu.zio.musicsync.AlbumDownloader
 import eu.zio.musicsync.MusicSyncHttpClient
 import eu.zio.musicsync.model.Album
+import eu.zio.musicsync.model.OfflineStatus
 import eu.zio.musicsync.model.RichAlbum
 import kotlinx.coroutines.launch
 
@@ -25,7 +28,9 @@ class AlbumListViewModel(app: Application) : AndroidViewModel(app) {
 
     val selectedAlbum = MutableLiveData<Album>()
 
-    val deleteAllClicked = MutableLiveData<Album>()
+    val deleteAllClicked = MutableLiveData<Pair<Int, Album>>()
+
+    val albumChanged = MutableLiveData<Pair<Int, OfflineStatus>>()
 
     fun refresh(artistName: String?) {
         viewModelScope.launch {
@@ -47,11 +52,17 @@ class AlbumListViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    fun delete(album: Album) {
-        if(downloader.deleteAlbum(album)) {
+    fun delete(baseDir: Uri, pos: Int, album: Album) {
+        val df = DocumentFile.fromTreeUri(getApplication(), baseDir)
+        if(downloader.deleteAlbum(df, album)) {
             userMessage.postValue("Album ${album.name} deleted")
         } else {
             userMessage.postValue("Could not delete album")
+        }
+
+        viewModelScope.launch {
+            val newStatus = downloader.albumStatus(album)
+            albumChanged.postValue(Pair(pos, newStatus))
         }
     }
 
@@ -63,3 +74,4 @@ class AlbumListViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 }
+

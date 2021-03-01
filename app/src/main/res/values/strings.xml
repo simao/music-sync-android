@@ -5,4 +5,5 @@
     <string name="title_notifications">Notifications</string>
     <string name="artist_albums">Artist Albums</string>
     <string name="delete_all">Delete All</string>
+    <string name="album_list_prefs">album_list_prefs</string>
 </resources>

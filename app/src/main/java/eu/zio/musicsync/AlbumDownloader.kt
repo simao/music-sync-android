@@ -2,15 +2,13 @@ package eu.zio.musicsync
 
 import android.app.DownloadManager
 import android.os.Environment
-import android.util.Log
 import androidx.core.net.toUri
+import androidx.documentfile.provider.DocumentFile
 import eu.zio.musicsync.model.Album
-import eu.zio.musicsync.model.Artist
 import eu.zio.musicsync.model.OfflineStatus
 import eu.zio.musicsync.model.Track
 import timber.log.Timber
 import java.io.File
-import java.sql.Time
 
 class AlbumDownloader(private val client: MusicSyncHttpClient,
                       private val downloadManager: DownloadManager
@@ -90,8 +88,8 @@ class AlbumDownloader(private val client: MusicSyncHttpClient,
         }
     }
 
-    fun deleteAlbum(album: Album): Boolean {
-        Timber.e(albumDir(album).listFiles()!!.toString())
-        return albumDir(album).deleteRecursively()
+    fun deleteAlbum(baseDir: DocumentFile?, album: Album): Boolean {
+        val documentFile = baseDir?.findFile(album.artist.name)?.findFile(album.name)
+        return documentFile?.delete() ?: false
     }
 }
