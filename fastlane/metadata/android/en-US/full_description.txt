@@ -1,0 +1,4 @@
+
+Companion app for musicsynd. Install this app on your android phone to download music from a music-sync server.
+
+
